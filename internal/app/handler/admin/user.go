@@ -67,7 +67,7 @@ func DeleteUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&data); err != nil {
 		return err
 	}
-
+	// comment this line
 	usernameExist, rawAccount := repo.MatchRecord("username", data["username"], &user.Account{})
 	if usernameExist == false {
 		return c.JSON(fiber.Map{"error": "Username does not exists"})
