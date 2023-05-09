@@ -1,0 +1,33 @@
+package bbb
+
+import (
+	"fmt"
+	"os"
+	"regexp"
+)
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func main() {
+
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		log.Println("Recovered in custom function", r)
+	//	}
+	//}()
+
+	dat, err := os.ReadFile("internal/app/handler/user/data.txt")
+	check(err)
+	//fmt.Print(string(dat))
+	//os.Stdout.Write(dat)
+
+	r := regexp.MustCompilePOSIX(`<rrr>.*0</a>`)
+	var rs = r.FindSubmatch(dat)
+
+	fmt.Println(rs)
+
+}
