@@ -55,7 +55,7 @@ func UpdateUser(c *fiber.Ctx) error {
 	//if err := c.BodyParser(&u); err != nil {
 	//	return err
 	//}
-
+	///////////////
 	userExist, rawAccount := repo.MatchRecord("id", thisAccount.ID, &user.Account{})
 
 	if userExist == false {
