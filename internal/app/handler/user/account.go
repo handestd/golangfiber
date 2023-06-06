@@ -106,7 +106,7 @@ func ChangePassword(c *fiber.Ctx) error {
 			account := rawAccount.(*user.Account)
 
 			var dataPayload map[string]string
-
+			//
 			if err := c.BodyParser(&dataPayload); err != nil {
 				return err
 			}
