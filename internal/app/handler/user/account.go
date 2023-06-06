@@ -114,7 +114,7 @@ func ChangePassword(c *fiber.Ctx) error {
 			originPassword := account.Password
 			oldPassword := dataPayload["oldPassword"]
 			newPassword := dataPayload["newPassword"]
-
+			// ===
 			if oldPassword == newPassword {
 				return c.JSON(fiber.Map{"error": "old password is same with new password"})
 			}
