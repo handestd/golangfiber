@@ -23,12 +23,12 @@ func UpdateUser(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"error": "you send empty value"})
 	}
 
-	var u = user.Account{}
-	if err := c.BodyParser(&u); err != nil {
-		return err
-	}
+	//var u = user.Account{}
+	//if err := c.BodyParser(&u); err != nil {
+	//	return err
+	//}
 
-	userExist, rawAccount := repo.MatchRecord("id", u.Id, &user.Account{})
+	userExist, rawAccount := repo.MatchRecord("id", data["id"], &user.Account{})
 
 	if userExist == false {
 		return c.JSON(fiber.Map{"error": "User does not exists"})
@@ -39,15 +39,13 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	account := rawAccount.(*user.Account)
 
-	newPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), 14)
-
-	if err != nil {
-		return c.JSON(fiber.Map{"error": err.Error()})
-	}
-
 	_, ok := data["password"]
 	// If the key exists
 	if ok {
+		newPassword, err := bcrypt.GenerateFromPassword([]byte(data["password"].(string)), 14)
+		if err != nil {
+			return c.JSON(fiber.Map{"error": err.Error()})
+		}
 		data["password"] = string(newPassword)
 	}
 
@@ -68,7 +66,7 @@ func DeleteUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	usernameExist, rawAccount := repo.MatchRecord("username", data["username"], &user.Account{})
+	usernameExist, rawAccount := repo.MatchRecord("id", data["id"], &user.Account{})
 	if usernameExist == false {
 		return c.JSON(fiber.Map{"error": "Username does not exists"})
 	}
@@ -85,6 +83,7 @@ func DeleteUser(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"success": "true"})
 	}
 	return nil
+
 }
 func ShowUsers(c *fiber.Ctx) error {
 
@@ -107,10 +106,17 @@ func ShowUsers(c *fiber.Ctx) error {
 }
 
 func AddUser(c *fiber.Ctx) error {
+
 	var data map[string]string
 
 	if err := c.BodyParser(&data); err != nil {
 		return err
+	}
+
+	checkUP := pkg.AllKeyRequired(data, []string{"username", "password"})
+
+	if checkUP == false {
+		return c.JSON(fiber.Map{"error": "missing required parameter"})
 	}
 
 	password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), 14)
@@ -123,14 +129,19 @@ func AddUser(c *fiber.Ctx) error {
 
 	usernameExist, _ := repo.MatchRecord("username", data["username"], &user.Account{})
 	if usernameExist == true {
-		return c.JSON(fiber.Map{"error": "Username already exists"})
-	}
-	emailExist, _ := repo.MatchRecord("email", data["email"], &user.Account{})
-	if emailExist == true {
-		return c.JSON(fiber.Map{"error": "Email already exists"})
+		return c.JSON(fiber.Map{"error": "User already exists"})
 	}
 
-	result := mysql.DB.Create(&account)
+	checkEmail := pkg.AllKeyRequired(data, []string{"email"})
+
+	if checkEmail {
+		emailExist, _ := repo.MatchRecord("email", data["email"], &user.Account{})
+		if emailExist == true {
+			return c.JSON(fiber.Map{"error": "Email already exists"})
+		}
+	}
+
+	result := mysql.DB.Model(&user.Account{}).Create(&account)
 
 	if result.Error != nil {
 		return c.JSON(fiber.Map{"error": result.Error.Error()})

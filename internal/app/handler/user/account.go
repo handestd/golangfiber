@@ -35,14 +35,67 @@ func Profile(c *fiber.Ctx) error {
 	return c.JSON(account)
 }
 
+func UpdateUser(c *fiber.Ctx) error {
+
+	var data map[string]interface{}
+
+	if err := c.BodyParser(&data); err != nil {
+		return err
+	}
+
+	nilValidate := pkg.IsMapContainNil(data, []string{"groupid", "avatar", "role", "lastip"})
+
+	if nilValidate {
+		return c.JSON(fiber.Map{"error": "you send empty value"})
+	}
+	userClaim := c.Locals("userClaim")
+	thisAccount := userClaim.(user.UserClaim)
+
+	//var u = user.Account{}
+	//if err := c.BodyParser(&u); err != nil {
+	//	return err
+	//}
+
+	userExist, rawAccount := repo.MatchRecord("id", thisAccount.ID, &user.Account{})
+
+	if userExist == false {
+		return c.JSON(fiber.Map{"error": "User does not exists"})
+	}
+	if rawAccount == nil {
+		return c.JSON(fiber.Map{"error": "can not found your user"})
+	}
+
+	account := rawAccount.(*user.Account)
+
+	_, ok := data["password"]
+	// If the key exists
+	if ok {
+		newPassword, err := bcrypt.GenerateFromPassword([]byte(data["password"].(string)), 14)
+		if err != nil {
+			return c.JSON(fiber.Map{"error": err.Error()})
+		}
+		data["password"] = string(newPassword)
+	}
+
+	rs := mysql.DB.Model(&account).Updates(data)
+	if rs.Error != nil {
+		return c.JSON(fiber.Map{"error": rs.Error.Error()})
+	}
+	if rs.RowsAffected == 1 {
+		return c.JSON(fiber.Map{"success": "true"})
+	}
+
+	return nil
+}
+
 func ChangePassword(c *fiber.Ctx) error {
 	data := c.Locals("userClaim")
 	if data != nil {
 		if pkg.CompareType(data, user.UserClaim{}) {
 			yourData := data.(user.UserClaim)
 
-			usernameExist, rawAccount := repo.MatchRecord("username", yourData.Username, &user.Account{})
-			if usernameExist == false {
+			userExist, rawAccount := repo.MatchRecord("id", yourData.ID, &user.Account{})
+			if userExist == false {
 				return c.JSON(fiber.Map{"error": "Username does not exists"})
 			}
 
@@ -72,8 +125,8 @@ func ChangePassword(c *fiber.Ctx) error {
 			}
 			password, _ := bcrypt.GenerateFromPassword([]byte(newPassword), 14)
 
-			rs := mysql.DB.Model(&user.Account{}).Where("id = ?", account.Id).Update("password", password)
-
+			//rs := mysql.DB.Model(&user.Account{}).Where("id = ?", account.Id).Update("password", password)
+			rs := mysql.DB.Model(&account).Updates(map[string]interface{}{"password": password})
 			if rs.Error != nil {
 				return c.JSON(fiber.Map{"error": rs.Error.Error()})
 			}
@@ -177,6 +230,8 @@ func Logout(c *fiber.Ctx) error {
 		Value:    "",
 		Expires:  time.Now().Add(-time.Hour),
 		HTTPOnly: true,
+		SameSite: "none",
+		Secure:   true,
 	}
 
 	c.Cookie(&cookie)

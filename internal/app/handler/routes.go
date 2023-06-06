@@ -44,6 +44,7 @@ func Setup(app *fiber.App) {
 	// FOR USER
 	userGroup.Get("/Profile", userHandler.Profile)
 	userGroup.Post("/ChangePassword", userHandler.ChangePassword)
+	userGroup.Post("/UpdateUser", userHandler.UpdateUser)
 	userGroup.Post("/Logout", userHandler.Logout)
 	app.Post("/Login", userHandler.Login)
 	app.Post("/register", userHandler.Register)

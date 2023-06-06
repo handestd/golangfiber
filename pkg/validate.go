@@ -4,6 +4,17 @@ import (
 	"reflect"
 )
 
+func AllKeyRequired(s map[string]string, requiredKey []string) bool {
+	for _, v := range requiredKey {
+		_, ok := s[v]
+		// If the key exists
+		if ok != true {
+			return false
+		}
+	}
+	return true
+}
+
 func IsMapContainNil(s map[string]interface{}, omitKey []string) bool {
 	for k, v := range s {
 		if contains(omitKey, k) == false {
@@ -21,7 +32,6 @@ func contains(s []string, str string) bool {
 			return true
 		}
 	}
-
 	return false
 }
 
